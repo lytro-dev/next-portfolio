@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell } from 'recharts';
 import MetricsCard from '../components/MetricsCard';
 import ChartCard from '../components/ChartCard';
 import TimeChartCard from '../components/TimeChartCard';
@@ -70,18 +70,6 @@ export default function Dashboard() {
             return acc;
         }, {} as Record<string, number>)
     ).map(([name, value]) => ({ name, value })).slice(0, 6);
-
-    const timeData = filteredVisitors
-        .reduce((acc, v) => {
-            const hour = new Date(v.client_timestamp).getHours();
-            acc[hour] = (acc[hour] || 0) + 1;
-        return acc;
-        }, {} as Record<number, number>);
-
-    const timeChartData = Array.from({ length: 24 }, (_, i) => ({
-        hour: `${i}:00`,
-        visits: timeData[i] || 0
-    }));
 
     if (loading) {
         return (

@@ -2,8 +2,17 @@
 
 import { useState, useEffect } from 'react';
 
+interface ApiData {
+    id: number;
+    ip: string;
+    country: string;
+    city: string;
+    client_timestamp: string;
+    [key: string]: unknown;
+}
+
 export default function SimpleTestPage() {
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<ApiData[] | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 

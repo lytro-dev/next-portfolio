@@ -1,10 +1,22 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import VisitorTracker from '../components/VisitorTracker';
 
+interface TrackingResult {
+    ip?: string;
+    visitor?: Record<string, unknown>;
+    geolocation?: {
+        country: string;
+        city: string;
+        region?: string;
+        timezone?: string;
+    };
+    error?: string;
+}
+
 export default function TestTrackingPage() {
-    const [trackingResult, setTrackingResult] = useState<any>(null);
+    const [trackingResult, setTrackingResult] = useState<TrackingResult | null>(null);
     const [loading, setLoading] = useState(false);
 
     const testTracking = async () => {
@@ -27,7 +39,7 @@ export default function TestTrackingPage() {
             } else {
                 setTrackingResult({ error: 'Failed to track visitor' });
             }
-        } catch (error) {
+        } catch {
             setTrackingResult({ error: 'Network error' });
         } finally {
             setLoading(false);
@@ -42,7 +54,7 @@ export default function TestTrackingPage() {
                 const data = await response.json();
                 setTrackingResult(data);
             }
-        } catch (error) {
+        } catch {
             setTrackingResult({ error: 'Failed to get location' });
         } finally {
             setLoading(false);
@@ -103,7 +115,9 @@ export default function TestTrackingPage() {
                             <div className="space-y-4">
                                 <div>
                                     <h3 className="font-medium text-gray-900">IP Address:</h3>
-                                    <p className="text-gray-600 font-mono">{trackingResult.ip || trackingResult.visitor?.ip}</p>
+                                    <p className="text-gray-600 font-mono">
+                                        {trackingResult.ip || (trackingResult.visitor?.ip as string)}
+                                    </p>
                                 </div>
                                 
                                 {trackingResult.geolocation && (
@@ -152,8 +166,8 @@ export default function TestTrackingPage() {
                     <h2 className="text-lg font-semibold text-blue-900 mb-4">How to Use</h2>
                     <div className="space-y-2 text-blue-800">
                         <p>• <strong>Auto-tracking:</strong> This page automatically tracks visits when loaded</p>
-                        <p>• <strong>Manual tracking:</strong> Click "Track This Visit" to manually add a visit record</p>
-                        <p>• <strong>Location check:</strong> Click "Get My Location" to see your IP geolocation</p>
+                        <p>• <strong>Manual tracking:</strong> Click &quot;Track This Visit&quot; to manually add a visit record</p>
+                        <p>• <strong>Location check:</strong> Click &quot;Get My Location&quot; to see your IP geolocation</p>
                         <p>• <strong>Database:</strong> All tracked visits are stored in your PostgreSQL database</p>
                         <p>• <strong>Dashboard:</strong> View all tracked data in your analytics dashboard</p>
                     </div>

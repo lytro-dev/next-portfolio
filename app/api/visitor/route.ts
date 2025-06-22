@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const useragent = require('express-useragent');
 
 const pool = new Pool({
@@ -30,7 +31,7 @@ async function getGeolocationData(ip: string): Promise<GeolocationData> {
             region: data.region || undefined,
             timezone: data.timezone || undefined
         };
-    } catch (error) {
+    } catch {
         return {
             country: 'Unknown',
             city: 'Unknown'
@@ -113,7 +114,6 @@ export async function POST(request: Request) {
         const clientIP = getClientIP(request);
         const body = await request.json();
         const userAgent = body.userAgent || request.headers.get('user-agent') || 'Unknown';
-        const page = body.page || 'Unknown';
         const timestamp = body.timestamp || new Date().toISOString();
         
         // Get geolocation data
@@ -148,10 +148,11 @@ export async function POST(request: Request) {
             version: uaData.version
         });
         
-    } catch (err: any) {
+    } catch (err: unknown) {
+        const error = err instanceof Error ? err : new Error('Unknown error occurred');
         return NextResponse.json({ 
-            error: err.message,
-            details: err.stack 
+            error: error.message,
+            details: error.stack 
         }, { status: 500 });
     }
 }
@@ -168,7 +169,8 @@ export async function GET(request: Request) {
             geolocation: geoData
         });
         
-    } catch (err: any) {
-        return NextResponse.json({ error: err.message }, { status: 500 });
+    } catch (err: unknown) {
+        const error = err instanceof Error ? err : new Error('Unknown error occurred');
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 } 

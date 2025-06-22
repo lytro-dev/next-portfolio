@@ -140,7 +140,7 @@ export function useDashboardData() {
     // Only fetch data once on mount
     useEffect(() => {
         fetchData();
-    }, []); // Empty dependency array - only run once
+    }, [fetchData]); // Include fetchData in dependencies
 
     return {
         visitors,

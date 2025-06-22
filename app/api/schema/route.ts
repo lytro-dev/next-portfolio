@@ -42,10 +42,11 @@ export async function GET() {
             statistics: stats.rows[0]
         });
         
-    } catch (err: any) {
+    } catch (err: unknown) {
+        const error = err instanceof Error ? err : new Error('Unknown error occurred');
         return NextResponse.json({ 
-            error: err.message,
-            details: err.stack 
+            error: error.message,
+            details: error.stack 
         }, { status: 500 });
     }
 } 

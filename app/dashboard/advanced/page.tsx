@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import {
-    BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
-    LineChart, Line, PieChart, Pie, Cell, AreaChart, Area, ComposedChart
+    BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+    PieChart, Pie, Cell, ComposedChart, Area, Line
 } from 'recharts';
 
 interface AnalyticsData {
@@ -44,8 +44,6 @@ export default function AdvancedDashboard() {
     const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
-    const [timeRange, setTimeRange] = useState('30d');
-    const [selectedCountry, setSelectedCountry] = useState('all');
     const [autoRefresh, setAutoRefresh] = useState(true);
     const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
@@ -56,8 +54,9 @@ export default function AdvancedDashboard() {
             const data = await response.json();
             setAnalyticsData(data);
             setLastUpdated(new Date());
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error('Unknown error occurred');
+            setError(error.message);
         } finally {
             setLoading(false);
         }

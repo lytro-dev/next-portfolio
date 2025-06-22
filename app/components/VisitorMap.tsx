@@ -86,11 +86,17 @@ async function geocodeCityCountry(city: string, country: string): Promise<{ lat:
 
 // Dynamic import for Leaflet components
 const MapComponent = ({ visitors }: { visitors: MapVisitor[] }) => {
-    const [MapContainer, setMapContainer] = useState<React.ComponentType<any> | null>(null);
-    const [TileLayer, setTileLayer] = useState<React.ComponentType<any> | null>(null);
-    const [Marker, setMarker] = useState<React.ComponentType<any> | null>(null);
-    const [Popup, setPopup] = useState<React.ComponentType<any> | null>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [MapContainer, setMapContainer] = useState<any>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [TileLayer, setTileLayer] = useState<any>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [Marker, setMarker] = useState<any>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [Popup, setPopup] = useState<any>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [L, setL] = useState<any>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mapRef = useRef<any>(null);
 
     useEffect(() => {
@@ -105,6 +111,7 @@ const MapComponent = ({ visitors }: { visitors: MapVisitor[] }) => {
             setPopup(reactLeaflet.Popup);
 
             // Fix for default markers in react-leaflet
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             delete (leaflet.default.Icon.Default.prototype as any)._getIconUrl;
             leaflet.default.Icon.Default.mergeOptions({
                 iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',

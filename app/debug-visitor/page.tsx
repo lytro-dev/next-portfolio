@@ -2,8 +2,14 @@
 
 import { useState } from 'react';
 
+interface TestResults {
+    type: string;
+    data?: unknown;
+    error?: string;
+}
+
 export default function DebugVisitorPage() {
-    const [testResults, setTestResults] = useState<any>(null);
+    const [testResults, setTestResults] = useState<TestResults | null>(null);
     const [loading, setLoading] = useState(false);
 
     const testDatabase = async () => {
@@ -12,8 +18,9 @@ export default function DebugVisitorPage() {
             const response = await fetch('/api/test-db');
             const data = await response.json();
             setTestResults({ type: 'database', data });
-        } catch (error: any) {
-            setTestResults({ type: 'database', error: error.message });
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+            setTestResults({ type: 'database', error: errorMessage });
         } finally {
             setLoading(false);
         }
@@ -25,8 +32,9 @@ export default function DebugVisitorPage() {
             const response = await fetch('/api/visitor');
             const data = await response.json();
             setTestResults({ type: 'geolocation', data });
-        } catch (error: any) {
-            setTestResults({ type: 'geolocation', error: error.message });
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+            setTestResults({ type: 'geolocation', error: errorMessage });
         } finally {
             setLoading(false);
         }
@@ -42,8 +50,9 @@ export default function DebugVisitorPage() {
             });
             const data = await response.json();
             setTestResults({ type: 'tracking', data });
-        } catch (error: any) {
-            setTestResults({ type: 'tracking', error: error.message });
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+            setTestResults({ type: 'tracking', error: errorMessage });
         } finally {
             setLoading(false);
         }

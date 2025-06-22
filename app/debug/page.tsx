@@ -1,9 +1,20 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+
+interface TestResults {
+    success?: boolean;
+    error?: string;
+    details?: string;
+    currentTime?: string;
+    tableExists?: boolean;
+    rowCount?: number;
+    sampleData?: unknown[];
+    [key: string]: unknown;
+}
 
 export default function DebugPage() {
-    const [testResults, setTestResults] = useState<any>(null);
+    const [testResults, setTestResults] = useState<TestResults | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 

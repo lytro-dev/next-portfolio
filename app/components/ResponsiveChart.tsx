@@ -11,7 +11,6 @@ interface ResponsiveChartProps {
 export default function ResponsiveChart({ 
     children, 
     height = 300, 
-    aspect = 16/9,
     className = "" 
 }: ResponsiveChartProps) {
     return (

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
-
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const useragent = require('express-useragent');
 
 const pool = new Pool({
@@ -24,19 +24,15 @@ function detectDevice(userAgentString: string): string {
 }
 
 // Function to detect VPN (basic detection)
-function detectVPN(ip: string): boolean {
+function detectVPN(): boolean {
     // Basic VPN detection - you can enhance this with more sophisticated methods
-    const vpnKeywords = [
-        'vpn', 'proxy', 'tor', 'anonymous', 'privacy'
-    ];
-    
     // For now, we'll return false as a placeholder
     // You can integrate with VPN detection APIs or databases
     return false;
 }
 
 // Function to parse user agent and return structured data
-function parseUserAgent(userAgentString: string, ip: string) {
+function parseUserAgent(userAgentString: string) {
     if (!userAgentString || userAgentString === 'Unknown') {
         return {
             browser: 'Unknown',
@@ -51,7 +47,7 @@ function parseUserAgent(userAgentString: string, ip: string) {
 
     const ua = useragent.parse(userAgentString);
     const device = detectDevice(userAgentString);
-    const isVPN = detectVPN(ip);
+    const isVPN = detectVPN();
     
     return {
         browser: ua.browser || 'Unknown',
@@ -188,7 +184,7 @@ export async function GET() {
         
         // Parse user agent data for each row
         const processedRows = result.rows.map(row => {
-            const userAgentData = parseUserAgent(row.user_agent, row.ip);
+            const userAgentData = parseUserAgent(row.user_agent);
             
             return {
                 ...row,
@@ -203,7 +199,8 @@ export async function GET() {
         });
         
         return NextResponse.json(processedRows);
-    } catch (err: any) {
-        return NextResponse.json({ error: err.message }, { status: 500 });
+    } catch (err: unknown) {
+        const error = err instanceof Error ? err : new Error('Unknown error occurred');
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

@@ -36,7 +36,7 @@ async function getGeolocationFromIP(ip: string): Promise<GeolocationData> {
             };
             
             return result;
-        } catch (primaryError) {
+        } catch {
             // Try fallback service (ipinfo.io)
             try {
                 const fallbackResponse = await fetch(`https://ipinfo.io/${ip}/json`);
@@ -55,11 +55,11 @@ async function getGeolocationFromIP(ip: string): Promise<GeolocationData> {
                 };
                 
                 return result;
-            } catch (fallbackError) {
+            } catch {
                 throw new Error('All geolocation services failed');
             }
         }
-    } catch (error) {
+    } catch {
         return {
             country: 'Unknown',
             state: 'Unknown',
@@ -68,13 +68,31 @@ async function getGeolocationFromIP(ip: string): Promise<GeolocationData> {
     }
 }
 
+interface RawDataItem {
+    id?: number;
+    ip?: string;
+    client_timestamp?: string;
+    language?: string;
+    platform?: string;
+    user_agent?: string;
+    browser?: string;
+    version?: string;
+    os?: string;
+    device?: string;
+    isVPN?: boolean;
+    referrer?: string;
+    page_name?: string;
+    source?: string;
+    [key: string]: unknown;
+}
+
 export function useGeolocation() {
     const [geolocationCache, setGeolocationCache] = useState<Record<string, GeolocationData>>({});
     const processedIPs = useRef<Set<string>>(new Set());
 
-    const processDataWithGeolocation = useCallback(async (rawData: any[]) => {
+    const processDataWithGeolocation = useCallback(async (rawData: RawDataItem[]) => {
         // Get unique IPs to fetch geolocation data
-        const uniqueIPs: string[] = Array.from(new Set(rawData.map((item: any) => String(item.ip || 'Unknown'))));
+        const uniqueIPs: string[] = Array.from(new Set(rawData.map((item: RawDataItem) => String(item.ip || 'Unknown'))));
 
         // Fetch geolocation data for unique IPs that haven't been processed yet
         const geoData: Record<string, GeolocationData> = {};
@@ -94,7 +112,7 @@ export function useGeolocation() {
         }
 
         // Process data with geolocation
-        const processedData = rawData.map((item: any, index: number) => {
+        const processedData = rawData.map((item: RawDataItem, index: number) => {
             const ip = String(item.ip || 'Unknown');
             
             // Get geolocation data with proper fallback chain
