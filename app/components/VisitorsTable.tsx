@@ -1,10 +1,73 @@
+import { useState, useMemo } from 'react';
 import { VisitorInfo } from '../types/dashboard';
 
 interface VisitorsTableProps {
     visitors: VisitorInfo[];
 }
 
+type SortField = keyof VisitorInfo;
+type SortDirection = 'asc' | 'desc';
+
 export default function VisitorsTable({ visitors }: VisitorsTableProps) {
+    const [sortField, setSortField] = useState<SortField>('client_timestamp');
+    const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterVPN, setFilterVPN] = useState<'all' | 'vpn' | 'direct'>('all');
+
+    // Filter and sort visitors
+    const filteredAndSortedVisitors = useMemo(() => {
+        let filtered = visitors.filter(visitor => {
+            const matchesSearch = searchTerm === '' ||
+                visitor.ip.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                visitor.country.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                visitor.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                visitor.browser.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                visitor.os.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                visitor.device.toLowerCase().includes(searchTerm.toLowerCase());
+
+            const matchesVPN = filterVPN === 'all' ||
+                (filterVPN === 'vpn' && visitor.isVPN) ||
+                (filterVPN === 'direct' && !visitor.isVPN);
+
+            return matchesSearch && matchesVPN;
+        });
+
+        // Sort visitors
+        filtered.sort((a, b) => {
+            let aValue = a[sortField];
+            let bValue = b[sortField];
+
+            // Handle special cases
+            if (sortField === 'client_timestamp') {
+                aValue = new Date(aValue as string).getTime();
+                bValue = new Date(bValue as string).getTime();
+            } else if (typeof aValue === 'string' && typeof bValue === 'string') {
+                aValue = aValue.toLowerCase();
+                bValue = bValue.toLowerCase();
+            }
+
+            if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+            if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        return filtered;
+    }, [visitors, sortField, sortDirection, searchTerm, filterVPN]);
+
+    const handleSort = (field: SortField) => {
+        if (sortField === field) {
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortDirection('asc');
+        }
+    };
+
+    const getSortIcon = (field: SortField) => {
+        if (sortField !== field) return null;
+        return sortDirection === 'asc' ? '↑' : '↓';
+    };
+
     if (visitors.length === 0) {
         return (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -21,30 +84,120 @@ export default function VisitorsTable({ visitors }: VisitorsTableProps) {
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Recent Visitors</h3>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900">Recent Visitors</h3>
+
+                    {/* Filters */}
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        {/* Search */}
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="Search visitors..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-8 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <svg className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+
+                        {/* VPN Filter */}
+                        <select
+                            value={filterVPN}
+                            onChange={(e) => setFilterVPN(e.target.value as 'all' | 'vpn' | 'direct')}
+                            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value="all">All Connections</option>
+                            <option value="vpn">VPN Only</option>
+                            <option value="direct">Direct Only</option>
+                        </select>
+                    </div>
+                </div>
             </div>
+
             <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Country</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">State</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">City</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Platform</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Browser</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden xl:table-cell">Version</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">OS</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden xl:table-cell">Device</th>
+                            <th
+                                className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleSort('id')}
+                            >
+                                ID {getSortIcon('id')}
+                            </th>
+                            <th
+                                className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleSort('ip')}
+                            >
+                                IP {getSortIcon('ip')}
+                            </th>
+                            <th
+                                className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleSort('country')}
+                            >
+                                Country {getSortIcon('country')}
+                            </th>
+                            <th
+                                className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleSort('state')}
+                            >
+                                State {getSortIcon('state')}
+                            </th>
+                            <th
+                                className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleSort('city')}
+                            >
+                                City {getSortIcon('city')}
+                            </th>
+                            <th
+                                className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleSort('platform')}
+                            >
+                                Platform {getSortIcon('platform')}
+                            </th>
+                            <th
+                                className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleSort('browser')}
+                            >
+                                Browser {getSortIcon('browser')}
+                            </th>
+                            <th
+                                className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden xl:table-cell cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleSort('version')}
+                            >
+                                Version {getSortIcon('version')}
+                            </th>
+                            <th
+                                className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleSort('os')}
+                            >
+                                OS {getSortIcon('os')}
+                            </th>
+                            <th
+                                className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden xl:table-cell cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleSort('device')}
+                            >
+                                Device {getSortIcon('device')}
+                            </th>
                             <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">VPN</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Language</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden xl:table-cell">Page</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Time</th>
+                            <th
+                                className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleSort('language')}
+                            >
+                                Language {getSortIcon('language')}
+                            </th>
+                            <th
+                                className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleSort('client_timestamp')}
+                            >
+                                Time {getSortIcon('client_timestamp')}
+                            </th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {visitors.slice(0, 10).map((visitor) => (
+                        {filteredAndSortedVisitors.slice(0, 10).map((visitor) => (
                             <tr key={visitor.id} className="hover:bg-gray-50">
                                 <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900">{visitor.id}</td>
                                 <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 font-mono">{visitor.ip}</td>
@@ -68,7 +221,6 @@ export default function VisitorsTable({ visitors }: VisitorsTableProps) {
                                     )}
                                 </td>
                                 <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 hidden lg:table-cell">{visitor.language}</td>
-                                <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 hidden xl:table-cell">{visitor.page_name}</td>
                                 <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 hidden sm:table-cell">
                                     {new Date(visitor.client_timestamp).toLocaleString()}
                                 </td>
@@ -76,6 +228,15 @@ export default function VisitorsTable({ visitors }: VisitorsTableProps) {
                         ))}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Results count */}
+            <div className="px-4 sm:px-6 py-3 border-t border-gray-200 bg-gray-50">
+                <p className="text-sm text-gray-600">
+                    Showing {Math.min(filteredAndSortedVisitors.length, 10)} of {filteredAndSortedVisitors.length} visitors
+                    {searchTerm && ` matching "${searchTerm}"`}
+                    {filterVPN !== 'all' && ` (${filterVPN} connections only)`}
+                </p>
             </div>
         </div>
     );

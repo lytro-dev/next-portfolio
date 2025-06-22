@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import MetricsCard from '../components/MetricsCard';
 import ChartCard from '../components/ChartCard';
+import TimeChartCard from '../components/TimeChartCard';
+import VisitorMap from '../components/VisitorMap';
 import VisitorsTable from '../components/VisitorsTable';
 import DashboardHeader from '../components/DashboardHeader';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -306,15 +308,12 @@ export default function Dashboard() {
 
                 {/* Time-based Chart */}
                 <div className="mb-6 sm:mb-8">
-                    <ChartCard title="Visits by Hour" height={300}>
-                        <LineChart data={timeChartData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="hour" />
-                            <YAxis />
-                            <Tooltip />
-                            <Line type="monotone" dataKey="visits" stroke="#8B5CF6" strokeWidth={2} />
-                        </LineChart>
-                    </ChartCard>
+                    <TimeChartCard title="Visits by Hour" data={timeChartData} height={300} />
+                </div>
+
+                {/* Visitor Map */}
+                <div className="mb-6 sm:mb-8">
+                    <VisitorMap visitors={filteredVisitors} title="Visitor Locations" height={400} />
                 </div>
 
                 {/* Visitors Table */}
