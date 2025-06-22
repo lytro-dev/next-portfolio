@@ -16,7 +16,7 @@ export default function VisitorsTable({ visitors }: VisitorsTableProps) {
 
     // Filter and sort visitors
     const filteredAndSortedVisitors = useMemo(() => {
-        let filtered = visitors.filter(visitor => {
+        const filtered = visitors.filter(visitor => {
             const matchesSearch = searchTerm === '' ||
                 visitor.ip.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 visitor.country.toLowerCase().includes(searchTerm.toLowerCase()) ||

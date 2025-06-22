@@ -20,7 +20,8 @@ export default function VisitorTracker({ pageName = 'Unknown', autoTrack = true 
                     },
                     body: JSON.stringify({
                         page: pageName,
-                        timestamp: new Date().toISOString()
+                        timestamp: new Date().toISOString(),
+                        userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'Unknown'
                     })
                 });
 
