@@ -308,7 +308,11 @@ export default function Dashboard() {
 
                 {/* Time-based Chart */}
                 <div className="mb-6 sm:mb-8">
-                    <TimeChartCard title="Visits by Hour" data={timeChartData} height={300} />
+                    <TimeChartCard 
+                        title="Visits by Hour" 
+                        data={visitors} 
+                        height={300} 
+                    />
                 </div>
 
                 {/* Visitor Map */}
