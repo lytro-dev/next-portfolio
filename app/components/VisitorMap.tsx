@@ -48,6 +48,7 @@ const MapComponent = ({ visitors }: { visitors: MapVisitor[] }) => {
     const [Marker, setMarker] = useState<React.ComponentType<any> | null>(null);
     const [Popup, setPopup] = useState<React.ComponentType<any> | null>(null);
     const [L, setL] = useState<any>(null);
+    const mapRef = useRef<any>(null);
 
     useEffect(() => {
         const loadLeaflet = async () => {
@@ -77,6 +78,21 @@ const MapComponent = ({ visitors }: { visitors: MapVisitor[] }) => {
 
         loadLeaflet();
     }, []);
+
+    // Fit bounds to visitors when they change
+    useEffect(() => {
+        if (mapRef.current && L && visitors.length > 0) {
+            const validVisitors = visitors.filter(v => v.lat !== 0 && v.lng !== 0);
+            if (validVisitors.length > 0) {
+                const bounds = L.latLngBounds(validVisitors.map(v => [v.lat, v.lng]));
+                mapRef.current.fitBounds(bounds, {
+                    padding: [20, 20],
+                    maxZoom: 8,
+                    animate: true
+                });
+            }
+        }
+    }, [visitors, L]);
 
     if (!MapContainer || !TileLayer || !Marker || !Popup || !L) {
         return (
@@ -116,20 +132,50 @@ const MapComponent = ({ visitors }: { visitors: MapVisitor[] }) => {
         });
     };
 
+    // Determine initial center and zoom based on visitors
+    const getInitialView = () => {
+        if (visitors.length === 0) {
+            return { center: [20, 0], zoom: 2 };
+        }
+        
+        const validVisitors = visitors.filter(v => v.lat !== 0 && v.lng !== 0);
+        if (validVisitors.length === 0) {
+            return { center: [20, 0], zoom: 2 };
+        }
+        
+        if (validVisitors.length === 1) {
+            return { center: [validVisitors[0].lat, validVisitors[0].lng], zoom: 6 };
+        }
+        
+        // For multiple visitors, calculate center but let fitBounds handle the zoom
+        const avgLat = validVisitors.reduce((sum, v) => sum + v.lat, 0) / validVisitors.length;
+        const avgLng = validVisitors.reduce((sum, v) => sum + v.lng, 0) / validVisitors.length;
+        return { center: [avgLat, avgLng], zoom: 3 };
+    };
+
+    const initialView = getInitialView();
+
     return (
         <MapContainer
-            center={[20, 0]}
-            zoom={2}
+            ref={mapRef}
+            center={initialView.center}
+            zoom={initialView.zoom}
             style={{ height: '100%', width: '100%' }}
             zoomControl={true}
             scrollWheelZoom={true}
             doubleClickZoom={true}
             boxZoom={true}
             dragging={true}
+            maxBounds={[[-90, -180], [90, 180]]}
+            maxBoundsViscosity={1.0}
+            minZoom={1}
+            maxZoom={10}
         >
             <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                noWrap={true}
+                bounds={[[-90, -180], [90, 180]]}
             />
             
             {visitors.map((visitor) => (
