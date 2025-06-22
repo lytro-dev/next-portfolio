@@ -13,6 +13,8 @@ export default function VisitorsTable({ visitors }: VisitorsTableProps) {
     const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
     const [searchTerm, setSearchTerm] = useState('');
     const [filterVPN, setFilterVPN] = useState<'all' | 'vpn' | 'direct'>('all');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
     // Filter and sort visitors
     const filteredAndSortedVisitors = useMemo(() => {
@@ -54,6 +56,19 @@ export default function VisitorsTable({ visitors }: VisitorsTableProps) {
         return filtered;
     }, [visitors, sortField, sortDirection, searchTerm, filterVPN]);
 
+    // Pagination calculations
+    const totalPages = Math.ceil(filteredAndSortedVisitors.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentVisitors = filteredAndSortedVisitors.slice(startIndex, endIndex);
+
+    // Reset to first page when filters change
+    const handleFilterChange = (newSearchTerm: string, newFilterVPN: 'all' | 'vpn' | 'direct') => {
+        setSearchTerm(newSearchTerm);
+        setFilterVPN(newFilterVPN);
+        setCurrentPage(1);
+    };
+
     const handleSort = (field: SortField) => {
         if (sortField === field) {
             setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -66,6 +81,54 @@ export default function VisitorsTable({ visitors }: VisitorsTableProps) {
     const getSortIcon = (field: SortField) => {
         if (sortField !== field) return null;
         return sortDirection === 'asc' ? '↑' : '↓';
+    };
+
+    const goToPage = (page: number) => {
+        setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+    };
+
+    const goToPreviousPage = () => {
+        goToPage(currentPage - 1);
+    };
+
+    const goToNextPage = () => {
+        goToPage(currentPage + 1);
+    };
+
+    // Generate page numbers for pagination
+    const getPageNumbers = () => {
+        const pages = [];
+        const maxVisiblePages = 5;
+        
+        if (totalPages <= maxVisiblePages) {
+            for (let i = 1; i <= totalPages; i++) {
+                pages.push(i);
+            }
+        } else {
+            if (currentPage <= 3) {
+                for (let i = 1; i <= 4; i++) {
+                    pages.push(i);
+                }
+                pages.push('...');
+                pages.push(totalPages);
+            } else if (currentPage >= totalPages - 2) {
+                pages.push(1);
+                pages.push('...');
+                for (let i = totalPages - 3; i <= totalPages; i++) {
+                    pages.push(i);
+                }
+            } else {
+                pages.push(1);
+                pages.push('...');
+                for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+                    pages.push(i);
+                }
+                pages.push('...');
+                pages.push(totalPages);
+            }
+        }
+        
+        return pages;
     };
 
     if (visitors.length === 0) {
@@ -95,7 +158,7 @@ export default function VisitorsTable({ visitors }: VisitorsTableProps) {
                                 type="text"
                                 placeholder="Search visitors..."
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={(e) => handleFilterChange(e.target.value, filterVPN)}
                                 className="pl-8 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                             <svg className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,12 +169,27 @@ export default function VisitorsTable({ visitors }: VisitorsTableProps) {
                         {/* VPN Filter */}
                         <select
                             value={filterVPN}
-                            onChange={(e) => setFilterVPN(e.target.value as 'all' | 'vpn' | 'direct')}
+                            onChange={(e) => handleFilterChange(searchTerm, e.target.value as 'all' | 'vpn' | 'direct')}
                             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
                             <option value="all">All Connections</option>
                             <option value="vpn">VPN Only</option>
                             <option value="direct">Direct Only</option>
+                        </select>
+
+                        {/* Items per page */}
+                        <select
+                            value={itemsPerPage}
+                            onChange={(e) => {
+                                setItemsPerPage(Number(e.target.value));
+                                setCurrentPage(1);
+                            }}
+                            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value={5}>5 per page</option>
+                            <option value={10}>10 per page</option>
+                            <option value={25}>25 per page</option>
+                            <option value={50}>50 per page</option>
                         </select>
                     </div>
                 </div>
@@ -197,7 +275,7 @@ export default function VisitorsTable({ visitors }: VisitorsTableProps) {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredAndSortedVisitors.slice(0, 10).map((visitor) => (
+                        {currentVisitors.map((visitor) => (
                             <tr key={visitor.id} className="hover:bg-gray-50">
                                 <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900">{visitor.id}</td>
                                 <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 font-mono">{visitor.ip}</td>
@@ -230,13 +308,52 @@ export default function VisitorsTable({ visitors }: VisitorsTableProps) {
                 </table>
             </div>
 
-            {/* Results count */}
+            {/* Pagination controls */}
             <div className="px-4 sm:px-6 py-3 border-t border-gray-200 bg-gray-50">
-                <p className="text-sm text-gray-600">
-                    Showing {Math.min(filteredAndSortedVisitors.length, 10)} of {filteredAndSortedVisitors.length} visitors
-                    {searchTerm && ` matching "${searchTerm}"`}
-                    {filterVPN !== 'all' && ` (${filterVPN} connections only)`}
-                </p>
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="text-sm text-gray-600">
+                        Showing {startIndex + 1} to {Math.min(endIndex, filteredAndSortedVisitors.length)} of {filteredAndSortedVisitors.length} visitors
+                        {searchTerm && ` matching "${searchTerm}"`}
+                        {filterVPN !== 'all' && ` (${filterVPN} connections only)`}
+                    </div>
+                    
+                    {totalPages > 1 && (
+                        <div className="flex items-center space-x-1">
+                            <button
+                                onClick={goToPreviousPage}
+                                disabled={currentPage === 1}
+                                className="px-3 py-2 border border-gray-300 rounded-l-md text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            >
+                                Previous
+                            </button>
+                            
+                            {getPageNumbers().map((page, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => typeof page === 'number' ? goToPage(page) : null}
+                                    disabled={page === '...'}
+                                    className={`px-3 py-2 border border-gray-300 text-sm font-medium ${
+                                        page === '...' 
+                                            ? 'text-gray-400 cursor-default' 
+                                            : currentPage === page 
+                                                ? 'bg-blue-500 text-white border-blue-500' 
+                                                : 'text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                                    }`}
+                                >
+                                    {page}
+                                </button>
+                            ))}
+                            
+                            <button
+                                onClick={goToNextPage}
+                                disabled={currentPage === totalPages}
+                                className="px-3 py-2 border border-gray-300 rounded-r-md text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
